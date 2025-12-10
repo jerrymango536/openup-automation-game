@@ -53,7 +53,7 @@ export default function AdminPage() {
 
       // Populate form
       const settingsMap = new Map<string, string>(settings.map((s: Setting) => [s.key, s.value]));
-      setAiModel(settingsMap.get('ai_model') ?? 'gemini-flash-latest');
+      setAiModel(settingsMap.get('ai_model') ?? AI_MODELS[0].value);
       setAiPrompt(settingsMap.get('ai_prompt') ?? '');
       setCategoryNames({
         quickWin: settingsMap.get('category_quick_win_name') ?? 'Quick Wins',
