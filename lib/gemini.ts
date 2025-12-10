@@ -2,8 +2,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { AnalysisResult } from './types';
 import { getSettings } from './settings';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
 // Default prompt as fallback
 const DEFAULT_PROMPT = `You are an automation assessment expert helping a team identify automation opportunities.
 
@@ -28,28 +26,44 @@ Categories:
 
 Keep reasoning SHORT and actionable.`;
 
-const DEFAULT_MODEL = 'gemini-flash-latest';
+const DEFAULT_MODEL = 'gemini-1.5-flash';
 
 export async function analyzeIdea(idea: string): Promise<AnalysisResult> {
+  console.log('[Gemini] Starting analysis for:', idea.substring(0, 50) + '...');
+
+  // Check if API key is set
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error('[Gemini] GEMINI_API_KEY is not set!');
+    throw new Error('GEMINI_API_KEY is not configured');
+  }
+  console.log('[Gemini] API key found (length:', apiKey.length, ')');
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+
   // Get settings from database
   let modelName = DEFAULT_MODEL;
   let promptTemplate = DEFAULT_PROMPT;
 
   try {
+    console.log('[Gemini] Fetching settings from database...');
     const settings = await getSettings(['ai_model', 'ai_prompt']);
     if (settings.ai_model) modelName = settings.ai_model;
     if (settings.ai_prompt) promptTemplate = settings.ai_prompt;
+    console.log('[Gemini] Using model:', modelName);
   } catch (error) {
-    console.warn('Could not load settings, using defaults:', error);
+    console.warn('[Gemini] Could not load settings, using defaults:', error);
   }
 
   const model = genAI.getGenerativeModel({ model: modelName });
   const prompt = promptTemplate.replace('{idea}', idea);
 
   try {
+    console.log('[Gemini] Calling Gemini API...');
     const result = await model.generateContent(prompt);
     const response = result.response;
     const text = response.text().trim();
+    console.log('[Gemini] Raw response:', text);
 
     // Parse the JSON response (handle potential markdown wrapping)
     let jsonText = text;
@@ -59,10 +73,12 @@ export async function analyzeIdea(idea: string): Promise<AnalysisResult> {
     }
 
     const parsed = JSON.parse(jsonText);
+    console.log('[Gemini] Parsed response:', parsed);
 
     // Validate the category
     if (!['quick-win', 'achievable', 'moonshot'].includes(parsed.category)) {
-      throw new Error('Invalid category');
+      console.error('[Gemini] Invalid category:', parsed.category);
+      throw new Error('Invalid category: ' + parsed.category);
     }
 
     return {
@@ -70,11 +86,7 @@ export async function analyzeIdea(idea: string): Promise<AnalysisResult> {
       reasoning: parsed.reasoning || 'Analysis complete.',
     };
   } catch (error) {
-    console.error('Gemini analysis error:', error);
-    // Default to achievable if parsing fails
-    return {
-      category: 'achievable',
-      reasoning: 'Requires further evaluation.',
-    };
+    console.error('[Gemini] Analysis error:', error);
+    throw error; // Re-throw so caller can handle it
   }
 }
