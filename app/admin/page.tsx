@@ -52,16 +52,16 @@ export default function AdminPage() {
       setSettings(settings);
 
       // Populate form
-      const settingsMap = new Map(settings.map((s: Setting) => [s.key, s.value]));
-      setAiModel(settingsMap.get('ai_model') || 'gemini-flash-latest');
-      setAiPrompt(settingsMap.get('ai_prompt') || '');
+      const settingsMap = new Map<string, string>(settings.map((s: Setting) => [s.key, s.value]));
+      setAiModel(settingsMap.get('ai_model') ?? 'gemini-flash-latest');
+      setAiPrompt(settingsMap.get('ai_prompt') ?? '');
       setCategoryNames({
-        quickWin: settingsMap.get('category_quick_win_name') || 'Quick Wins',
-        quickWinDesc: settingsMap.get('category_quick_win_description') || '',
-        achievable: settingsMap.get('category_achievable_name') || 'Achievable',
-        achievableDesc: settingsMap.get('category_achievable_description') || '',
-        moonshot: settingsMap.get('category_moonshot_name') || 'Moonshots',
-        moonshotDesc: settingsMap.get('category_moonshot_description') || '',
+        quickWin: settingsMap.get('category_quick_win_name') ?? 'Quick Wins',
+        quickWinDesc: settingsMap.get('category_quick_win_description') ?? '',
+        achievable: settingsMap.get('category_achievable_name') ?? 'Achievable',
+        achievableDesc: settingsMap.get('category_achievable_description') ?? '',
+        moonshot: settingsMap.get('category_moonshot_name') ?? 'Moonshots',
+        moonshotDesc: settingsMap.get('category_moonshot_description') ?? '',
       });
     } catch (err) {
       setError('Failed to load settings. Make sure you ran the SQL seed.');
