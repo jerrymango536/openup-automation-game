@@ -26,7 +26,7 @@ Categories:
 
 Keep reasoning SHORT and actionable.`;
 
-const DEFAULT_MODEL = 'gemini-1.5-flash';
+const DEFAULT_MODEL = 'gemini-flash-latest';
 
 export async function analyzeIdea(idea: string): Promise<AnalysisResult> {
   console.log('[Gemini] Starting analysis for:', idea.substring(0, 50) + '...');
