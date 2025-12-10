@@ -103,9 +103,6 @@ export default function HostDashboard({ params }: PageProps) {
     );
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const sessionUrl = `${appUrl}/session/${code}`;
-
   return (
     <main className="relative z-10 min-h-screen flex flex-col p-6">
       {/* Header */}
@@ -126,7 +123,7 @@ export default function HostDashboard({ params }: PageProps) {
         </div>
 
         {/* QR Code and session code */}
-        <SessionCode code={code} sessionUrl={sessionUrl} />
+        <SessionCode code={code} />
       </motion.header>
 
       {/* Kanban Board */}
