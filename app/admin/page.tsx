@@ -13,10 +13,10 @@ interface Setting {
 }
 
 const AI_MODELS = [
-  { value: 'gemini-flash-latest', label: 'Gemini Flash (Latest)' },
-  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' },
+  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (Recommended)' },
+  { value: 'claude-sonnet-4-20250514', label: 'Claude Sonnet 4' },
+  { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
+  { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
 ];
 
 export default function AdminPage() {

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 import { AnalysisResult } from './types';
 import { getSettings } from './settings';
 
@@ -26,44 +26,49 @@ Categories:
 
 Keep reasoning SHORT and actionable.`;
 
-const DEFAULT_MODEL = 'gemini-flash-latest';
+const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
 
 export async function analyzeIdea(idea: string): Promise<AnalysisResult> {
-  console.log('[Gemini] Starting analysis for:', idea.substring(0, 50) + '...');
+  console.log('[Claude] Starting analysis for:', idea.substring(0, 50) + '...');
 
   // Check if API key is set
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    console.error('[Gemini] GEMINI_API_KEY is not set!');
-    throw new Error('GEMINI_API_KEY is not configured');
+    console.error('[Claude] ANTHROPIC_API_KEY is not set!');
+    throw new Error('ANTHROPIC_API_KEY is not configured');
   }
-  console.log('[Gemini] API key found (length:', apiKey.length, ')');
+  console.log('[Claude] API key found (length:', apiKey.length, ')');
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const client = new Anthropic({ apiKey });
 
   // Get settings from database
   let modelName = DEFAULT_MODEL;
   let promptTemplate = DEFAULT_PROMPT;
 
   try {
-    console.log('[Gemini] Fetching settings from database...');
+    console.log('[Claude] Fetching settings from database...');
     const settings = await getSettings(['ai_model', 'ai_prompt']);
     if (settings.ai_model) modelName = settings.ai_model;
     if (settings.ai_prompt) promptTemplate = settings.ai_prompt;
-    console.log('[Gemini] Using model:', modelName);
+    console.log('[Claude] Using model:', modelName);
   } catch (error) {
-    console.warn('[Gemini] Could not load settings, using defaults:', error);
+    console.warn('[Claude] Could not load settings, using defaults:', error);
   }
 
-  const model = genAI.getGenerativeModel({ model: modelName });
   const prompt = promptTemplate.replace('{idea}', idea);
 
   try {
-    console.log('[Gemini] Calling Gemini API...');
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text().trim();
-    console.log('[Gemini] Raw response:', text);
+    console.log('[Claude] Calling Claude API...');
+    const message = await client.messages.create({
+      model: modelName,
+      max_tokens: 256,
+      messages: [
+        { role: 'user', content: prompt }
+      ],
+    });
+
+    const text = message.content[0].type === 'text' ? message.content[0].text.trim() : '';
+    console.log('[Claude] Raw response:', text);
 
     // Parse the JSON response (handle potential markdown wrapping)
     let jsonText = text;
@@ -73,11 +78,11 @@ export async function analyzeIdea(idea: string): Promise<AnalysisResult> {
     }
 
     const parsed = JSON.parse(jsonText);
-    console.log('[Gemini] Parsed response:', parsed);
+    console.log('[Claude] Parsed response:', parsed);
 
     // Validate the category
     if (!['quick-win', 'achievable', 'moonshot'].includes(parsed.category)) {
-      console.error('[Gemini] Invalid category:', parsed.category);
+      console.error('[Claude] Invalid category:', parsed.category);
       throw new Error('Invalid category: ' + parsed.category);
     }
 
@@ -86,7 +91,7 @@ export async function analyzeIdea(idea: string): Promise<AnalysisResult> {
       reasoning: parsed.reasoning || 'Analysis complete.',
     };
   } catch (error) {
-    console.error('[Gemini] Analysis error:', error);
-    throw error; // Re-throw so caller can handle it
+    console.error('[Claude] Analysis error:', error);
+    throw error;
   }
 }
