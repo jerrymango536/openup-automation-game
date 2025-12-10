@@ -22,8 +22,8 @@ GRANT ALL ON settings TO anon, authenticated;
 INSERT INTO settings (key, value, description) VALUES
 (
   'ai_model',
-  'gemini-flash-latest',
-  'The Gemini model to use for analysis'
+  'claude-sonnet-4-5-20250929',
+  'The Claude model to use for analysis'
 ),
 (
   'ai_prompt',
