@@ -26,7 +26,7 @@ Categories:
 
 Keep reasoning SHORT and actionable.`;
 
-const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+const DEFAULT_MODEL = 'claude-sonnet-4-5-20250929';
 
 export async function analyzeIdea(idea: string): Promise<AnalysisResult> {
   console.log('[Claude] Starting analysis for:', idea.substring(0, 50) + '...');
