@@ -1,65 +1,230 @@
-import Image from "next/image";
+'use client';
+
+import { useState, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 export default function Home() {
+  const router = useRouter();
+  const [mode, setMode] = useState<'choose' | 'create' | 'join'>('choose');
+  const [sessionName, setSessionName] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleCreate = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!sessionName.trim()) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: sessionName.trim() }),
+      });
+
+      if (!res.ok) throw new Error('Failed to create session');
+
+      const { session } = await res.json();
+      router.push(`/session/${session.code}/host`);
+    } catch {
+      setError('Failed to create session. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleJoin = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!joinCode.trim()) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch(`/api/session?code=${joinCode.trim().toUpperCase()}`);
+
+      if (!res.ok) {
+        if (res.status === 404) {
+          setError('Session not found. Check the code and try again.');
+        } else {
+          throw new Error('Failed to join session');
+        }
+        return;
+      }
+
+      const { session } = await res.json();
+      router.push(`/session/${session.code}`);
+    } catch {
+      setError('Failed to join session. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="relative z-10 min-h-screen flex flex-col items-center justify-center p-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
+        {/* Logo/Title */}
+        <div className="text-center mb-12">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="inline-block mb-4"
+          >
+            <span className="text-5xl">🤖</span>
+          </motion.div>
+          <h1 className="text-4xl font-bold mb-2 text-glow-cyan">
+            Automation<br />Ideation
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-[var(--foreground-muted)]">
+            What should we automate next?
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {/* Mode selection */}
+        {mode === 'choose' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-4"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setMode('create')}
+              className="w-full btn-primary text-lg py-4"
+            >
+              Start a Session
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setMode('join')}
+              className="w-full btn-secondary text-lg py-4"
+            >
+              Join a Session
+            </motion.button>
+          </motion.div>
+        )}
+
+        {/* Create session form */}
+        {mode === 'create' && (
+          <motion.form
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            onSubmit={handleCreate}
+            className="space-y-4"
           >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <div>
+              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
+                Session Name
+              </label>
+              <input
+                type="text"
+                value={sessionName}
+                onChange={(e) => setSessionName(e.target.value)}
+                placeholder="e.g., Q1 Automation Ideas"
+                className="w-full"
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <p className="text-red-400 text-sm">{error}</p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('choose');
+                  setError('');
+                }}
+                className="btn-secondary flex-1"
+                disabled={isLoading}
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={!sessionName.trim() || isLoading}
+                className="btn-primary flex-1 disabled:opacity-50"
+              >
+                {isLoading ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </motion.form>
+        )}
+
+        {/* Join session form */}
+        {mode === 'join' && (
+          <motion.form
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            onSubmit={handleJoin}
+            className="space-y-4"
+          >
+            <div>
+              <label className="block text-sm text-[var(--foreground-muted)] mb-2">
+                Session Code
+              </label>
+              <input
+                type="text"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                placeholder="Enter 6-digit code"
+                className="w-full text-center text-2xl font-mono tracking-widest uppercase"
+                maxLength={6}
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <p className="text-red-400 text-sm">{error}</p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('choose');
+                  setError('');
+                }}
+                className="btn-secondary flex-1"
+                disabled={isLoading}
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={joinCode.length !== 6 || isLoading}
+                className="btn-primary flex-1 disabled:opacity-50"
+              >
+                {isLoading ? 'Joining...' : 'Join'}
+              </button>
+            </div>
+          </motion.form>
+        )}
+
+        {/* Footer */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="text-center text-xs text-[var(--foreground-muted)] mt-12"
+        >
+          Powered by OpenUp • AI-First Transformation
+        </motion.p>
+      </motion.div>
+    </main>
   );
 }
